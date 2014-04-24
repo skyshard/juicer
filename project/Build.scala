@@ -1,6 +1,8 @@
 import sbt._
 import Keys._
 import com.typesafe.sbt.SbtStartScript
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object BuildSettings {
   import Dependencies._
@@ -20,7 +22,7 @@ object BuildSettings {
         resolvers := Seq(sonatypeRepo, snacktoryRepo)
       )
 
-  val projectSettings = Defaults.defaultSettings ++ globalSettings
+  val projectSettings = Defaults.defaultSettings ++ globalSettings ++ assemblySettings
 }
 
 object Resolvers {
@@ -45,7 +47,7 @@ object Dependencies {
   val slf4j = "org.slf4j" % "slf4j-log4j12" % "1.6.6"
   val slf4jTest = slf4j % "test"
 
-  val corenlp = "edu.stanford.nlp" % "stanford-corenlp" % "1.3.4" classifier "models" classifier ""
+  val corenlp = "edu.stanford.nlp" % "stanford-corenlp" % "1.3.4" exclude("xom", "xom")
 
   val commonsLang = "commons-lang" % "commons-lang" % "2.6" 
 
