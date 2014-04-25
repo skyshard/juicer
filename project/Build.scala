@@ -51,7 +51,7 @@ object Dependencies {
 
   val snacktory = "de.jetwick" % "snacktory" % "1.2.1-SNAPSHOT"
 
-  val languageDetection = "com.cybozu.labs" % "langdetect" % "1.1-20120112"
+  val languageDetection = "com.cybozu.labs" % "langdetect" % "1.2-SNAPSHOT"
 }
 
 object JuicerBuild extends Build {
