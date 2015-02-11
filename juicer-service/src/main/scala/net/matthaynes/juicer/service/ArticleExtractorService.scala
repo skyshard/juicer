@@ -37,6 +37,7 @@ case class ExtractedArticle(
 
 class ArticleExtractorService {
   val logger =  LoggerFactory.getLogger(getClass)
+  implicit val formats = net.liftweb.json.DefaultFormats
 
   val config = new Configuration
   config.setLocalStoragePath("/tmp/goose")
@@ -296,8 +297,9 @@ class ArticleExtractorService {
       val fixed_url = get_ajax_ugly_url(url)
       val article = snacktory.fetchAndExtract(fixed_url, 20000, true)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
-
       val lang = get_language(text)
+      val named_entities = Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText))
+      val authorName = clean_author(article.getAuthorName, named_entities)
 
       return new ExtractedArticle(
         get_ajax_pretty_url(article.getUrl),    // should be handling this + canonicalization inside snacktory
@@ -307,10 +309,10 @@ class ArticleExtractorService {
         article.getTitle, 
         article.getDescription, 
         article.getText, 
-        Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText)), 
+        named_entities, 
         Option(article.getLinks.toList.map(_.toMap)).getOrElse(null), 
         article.getImageUrl, 
-        Map("author" -> article.getAuthorName, "authorDescription" ->  article.getAuthorDescription, "language" -> lang, "extractor" -> "snacktory")
+        Map("author" -> authorName, "authorDescription" ->  article.getAuthorDescription, "language" -> lang, "extractor" -> "snacktory")
       )
     } else {
       val article  = goose.extractContent(url)
@@ -337,10 +339,12 @@ class ArticleExtractorService {
     if (!force_goose) {
       val fixed_url = get_ajax_ugly_url(url)
       val document = Jsoup.parse(src, fixed_url)
-      val article = snacktoryExtractor.extractContent(new JResult, document, snacktoryFormatter)
+      val article = snacktoryExtractor.extractContent(new JResult, document, snacktoryFormatter, false)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val canonical_url = get_canonical_url(document, fixed_url)
+      val named_entities = Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText))
+      val authorName = clean_author(article.getAuthorName, named_entities)
 
       return new ExtractedArticle(
         canonical_url, 
@@ -350,10 +354,10 @@ class ArticleExtractorService {
         article.getTitle, 
         article.getDescription, 
         article.getText, 
-        Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText)), 
+        named_entities, 
         Option(article.getLinks.toList.map(_.toMap)).getOrElse(null), 
         article.getImageUrl, 
-        Map("author" -> article.getAuthorName, "authorDescription" ->  article.getAuthorDescription, "language" -> lang, "extractor" -> "snacktory")
+        Map("author" -> authorName, "authorDescription" ->  article.getAuthorDescription, "language" -> lang, "extractor" -> "snacktory")
       )
     } else {
       val article  = goose.extractContent(url, src)
@@ -374,6 +378,32 @@ class ArticleExtractorService {
         Option(article.additionalData ++ Map("language" -> lang, "extractor" -> "goose")).map(_.toMap).getOrElse(null)
       )
     }
+  }
+
+  // Hack to clean the author name. The basic assumption is that if the current author
+  // name is too long then it is most likely incorrect. This function iterates over
+  // the Person named entities and try to find whether they are inside the large
+  // author, if they are we assume that is the author name.
+  // TODO: This code can probably be refactored to be more idiomatic.
+  def clean_author(author: String, entities: Option[List[NamedEntity]]) : String = {
+    var result = author
+    if (entities!=None) {
+      if (author!=null && author.length() > 20) {
+        val names = entities.get.collect { case i:Person => i.text }
+        var name_length = 0
+        for (name <- names){
+          if (author contains name){
+            // Author should be the longest named entity.
+            if (name.length() > name_length){
+              name_length = name.length()
+              result = name
+            }
+          }
+        }
+      }
+    }
+
+    return result
   }
 
   def get_language(text: String): String = {
