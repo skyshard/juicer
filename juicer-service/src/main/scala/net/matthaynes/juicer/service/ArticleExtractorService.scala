@@ -339,7 +339,9 @@ class ArticleExtractorService {
     if (!force_goose) {
       val fixed_url = get_ajax_ugly_url(url)
       val document = Jsoup.parse(src, fixed_url)
-      val article = snacktoryExtractor.extractContent(new JResult, document, snacktoryFormatter, false)
+      val jresult = new JResult
+      jresult.setUrl(url); // url needed by date extraction.
+      val article = snacktoryExtractor.extractContent(jresult, document, snacktoryFormatter, false)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val canonical_url = get_canonical_url(document, fixed_url)
