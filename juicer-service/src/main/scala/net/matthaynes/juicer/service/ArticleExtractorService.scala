@@ -292,10 +292,11 @@ class ArticleExtractorService {
 
   val entities = new NamedEntityService
 
-  def extract(url : String, force_goose : Boolean = false, extract_entities : Boolean = true) : ExtractedArticle = {
+  def extract(url : String, force_goose : Boolean = false, extract_entities : Boolean = true, 
+              max_content_size : Integer = 0) : ExtractedArticle = {
     if (!force_goose) {
       val fixed_url = get_ajax_ugly_url(url)
-      val article = snacktory.fetchAndExtract(fixed_url, 20000, true)
+      val article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val named_entities = Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText))
@@ -335,13 +336,14 @@ class ArticleExtractorService {
     }
   }
 
-  def extract_src(url : String, src : String, force_goose : Boolean = false, extract_entities : Boolean = true) : ExtractedArticle = {
+  def extract_src(url : String, src : String, force_goose : Boolean = false, 
+                  extract_entities : Boolean = true, max_content_size : Integer = 0) : ExtractedArticle = {
     if (!force_goose) {
       val fixed_url = get_ajax_ugly_url(url)
       val document = Jsoup.parse(src, fixed_url)
       val jresult = new JResult
       jresult.setUrl(url); // url needed by date extraction.
-      val article = snacktoryExtractor.extractContent(jresult, document, snacktoryFormatter, false)
+      val article = snacktoryExtractor.extractContent(jresult, document, snacktoryFormatter, false, max_content_size)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val canonical_url = get_canonical_url(document, fixed_url)

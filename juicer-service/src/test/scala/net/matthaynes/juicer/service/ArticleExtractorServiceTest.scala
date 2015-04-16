@@ -32,6 +32,15 @@ class ArticleExtractorServiceTest extends FunSuite {
     assert(extracted.domain == article.domain)
   }
 
+  test("snacktory - limit content size") {
+    val c = new Converter
+    val url = "http://women2.com/2014/06/18/woman-entrepreneur-misnomer/"
+    val html = c.streamToString(getClass().getResourceAsStream("women2.html"))
+    val extracted = service.extract_src(url, src=html, max_content_size=100)
+    assert(extracted.title == "Why 'Woman Entrepreneur' Is a Misnomer")
+    assert(extracted.body.length() == 100)
+  }
+
   test("snacktory - author extract from named entities") {
     val c = new Converter
     val url = "http://women2.com/2014/06/18/woman-entrepreneur-misnomer/"
