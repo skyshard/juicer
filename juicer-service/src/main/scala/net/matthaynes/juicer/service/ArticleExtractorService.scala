@@ -296,7 +296,15 @@ class ArticleExtractorService {
               max_content_size : Integer = 0) : ExtractedArticle = {
     if (!force_goose) {
       val fixed_url = get_ajax_ugly_url(url)
-      val article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size)
+      var article = new JResult
+      try {
+        article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size, false)
+      } catch {
+        case e: IllegalArgumentException => {
+          article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size, true)
+        }
+      }
+      
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val named_entities = Option(extract_entities).filter(_ == true).map(_ => entities.classify(article.getText))
