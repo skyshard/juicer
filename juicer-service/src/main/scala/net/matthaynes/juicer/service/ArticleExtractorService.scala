@@ -298,7 +298,15 @@ class ArticleExtractorService {
       val fixed_url = get_ajax_ugly_url(url)
       var article = new JResult
       try {
-        article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size, false)
+        // Nasty hack to fix an issue with an incorrect title when extracting articles from
+        // this site. Basically if the the resolve code is execute (HEAD request) the subsecuent GET
+        // request gets a slightly different version of the HTML (with an incorrect title).
+        // FIXME: The resolve code is weird in the first place, probably should be revisited.
+        var resolve = true 
+        if (fixed_url.startsWith("http://blogs.msdn.com")){
+          resolve = false
+        }
+        article = snacktory.fetchAndExtract(fixed_url, 20000, resolve, max_content_size, false)
       } catch {
         case e: IllegalArgumentException => {
           article = snacktory.fetchAndExtract(fixed_url, 20000, true, max_content_size, true)
