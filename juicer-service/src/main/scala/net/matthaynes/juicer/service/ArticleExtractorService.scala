@@ -359,7 +359,7 @@ class ArticleExtractorService {
       val document = Jsoup.parse(src, fixed_url)
       val jresult = new JResult
       jresult.setUrl(url); // url needed by date extraction.
-      val article = snacktoryExtractor.extractContent(jresult, document, snacktoryFormatter, false, max_content_size)
+      val article = snacktoryExtractor.extractContent(jresult, document, snacktoryFormatter, true, max_content_size)
       var text = List(article.getTitle, article.getDescription, article.getText).filter(_ != null).mkString(" ")
       val lang = get_language(text)
       val canonical_url = get_canonical_url(document, fixed_url)
